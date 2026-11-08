@@ -1,49 +1,29 @@
 "set tw = 80 (set 80 characters for one line)
 ":retab to manually expand tab into 4 spaces
-":ConqueTermVSplit bash (split vim editor with a terminal)
+":vertical terminal (split vim editor with a terminal)
 "add text at the end of each line in Vim?::%s/$/,/ OR vip<C-V>$A,<Esc>
 "After :set=80, choose the text, then "gqq
 
 set cinkeys-=0#               "indent for #pragma: http://stackoverflow.com/questions/12469463/vim-c-back-indent-with
 
 set nocompatible              " be iMproved, required
-filetype off                  " required
+silent! filetype off          " required by Vundle (silent: avoids E216 on first start)
 
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
-" alternatively, pass a path where Vundle should install plugins
-"call vundle#begin('~/some/path/here')
 
 " let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim'
-
-" The following are examples of different formats supported.
-" Keep Plugin commands between vundle#begin/end.
-" plugin on GitHub repo
+Plugin 'VundleVim/Vundle.vim'
 Plugin 'tpope/vim-fugitive'
-" plugin from http://vim-scripts.org/vim/scripts.html
-Plugin 'L9'
-" Git plugin not hosted on GitHub
-"Plugin 'git://git.wincent.com/command-t.git'
-" git repos on your local machine (i.e. when working on your own plugin)
-Plugin 'file:///home/gmarik/path/to/plugin'
-" The sparkup vim script is in a subdirectory of this repo called vim.
-" Pass the path to set the runtimepath properly.
-Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
-" Avoid a name conflict with L9
-Plugin 'user/L9', {'name': 'newL9'}
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
-" To ignore plugin indent changes, instead use:
-"filetype plugin on
 "
 " Brief help
 " :PluginList       - lists configured plugins
 " :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
-" :PluginSearch foo - searches for foo; append `!` to refresh local cache
 " :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
 "
 " see :h vundle for more details or wiki for FAQ
@@ -98,10 +78,21 @@ set nocompatible
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
 
-if has("vms")
-  set nobackup		" do not keep a backup file, use versions instead
-else
-  set backup		" keep a backup file
+" Keep backup/swap/undo files out of the working directories
+for s:d in ['backup', 'swap', 'undo']
+  if !isdirectory(expand('~/.vim/tmp/' . s:d))
+    call mkdir(expand('~/.vim/tmp/' . s:d), 'p')
+  endif
+endfor
+set backup		" keep a backup file
+set backupdir=~/.vim/tmp/backup//
+set directory=~/.vim/tmp/swap//
+set undodir=~/.vim/tmp/undo//
+set undofile
+
+" Share the system clipboard (macOS pasteboard) when available
+if has('clipboard')
+  set clipboard=unnamed
 endif
 set history=100		" keep 50 lines of command line history
 set ruler		" show the cursor position all the time
@@ -187,7 +178,7 @@ endif
  "Fast editing of .vimrc
  map <silent> <leader>ee :e ~/.vimrc<cr>
  "When .vimrc is edited, reload it
- autocmd! bufwritepost .vimrc source ~/.vimrc 
+ autocmd! bufwritepost .vimrc,vimrc source ~/.vimrc
 
 "Pydiction Plugin"
 filetype plugin on
@@ -245,16 +236,6 @@ let g:bufExplorerSplitVertical=1     " Split vertically.
 let g:bufExplorerSplitVertSize = 30  " Split width
 let g:bufExplorerUseCurrentWindow=1  " Open in new window.
 autocmd BufWinEnter \[Buf\ List\] setl nonumber 
-
-""""""""""""""""""""""""""""""
-" winManager setting
-"""""""""""""""""""""""""""
-let g:winManagerWindowLayout = "BufExplorer,FileExplorer|TagList"
-let g:winManagerWidth = 30
-let g:defaultExplorer = 0
-nmap <C-W><C-F> :FirstExplorerWindow<cr>
-nmap <C-W><C-B> :BottomExplorerWindow<cr>
-nmap <silent> <leader>wm :WMToggle<cr> 
 
 """V undle: Github management plugin for  plugin
 "set nocompatible " be iMproved

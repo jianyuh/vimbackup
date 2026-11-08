@@ -1,6 +1,37 @@
 # ~/.bashrc
 
-## My customizations 
+## My customizations
+
+# Only run the rest for interactive shells (keeps scp/rsync quiet)
+case $- in *i*) ;; *) return ;; esac
+
+## Platform-specific setup
+case "$OSTYPE" in
+  darwin*)
+    export BASH_SILENCE_DEPRECATION_WARNING=1
+    # Homebrew (Apple Silicon or Intel), only if installed
+    for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+      [ -x "$_brew" ] && eval "$("$_brew" shellenv)" && break
+    done
+    unset _brew
+    # bash-completion@2 from Homebrew, if installed
+    [ -n "$HOMEBREW_PREFIX" ] && [ -r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ] \
+      && . "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
+    ;;
+  linux*)
+    alias ml='module list'
+    alias ma='module avail'
+    alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'
+    ;;
+esac
+
+export PATH="$HOME/.local/bin:$PATH"
+
+## History
+HISTSIZE=10000
+HISTFILESIZE=20000
+HISTCONTROL=ignoreboth
+shopt -s histappend checkwinsize
 
 ## Colors
 export CLICOLOR=1
@@ -92,13 +123,12 @@ PS1="[\[\033[1;32m\]\u@\H: \w\[\033[0m\]] \[\033[0m\]\[\033[1;36m\]\$(git_branch
 ## Common alias
 
 alias gitk='gitk --all &'
-alias ml='module list'
-alias ma='module avail'
 alias rm='rm -i'
 alias ..='cd ..'
-alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'
 alias du='du -kh'
 #alias ls='ls -h --color'
 alias h='history'
 alias j='jobs -l'
 
+## Machine-local overrides (not in git)
+[ -r ~/.bashrc.local ] && . ~/.bashrc.local

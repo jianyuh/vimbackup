@@ -13,3 +13,6 @@
 *.txt
 *.pyc
 .DS_Store
+tmp/
+bundle/*
+!bundle/Vundle.vim/
