@@ -17,6 +17,9 @@ case "$OSTYPE" in
     # bash-completion@2 from Homebrew, if installed
     [ -n "$HOMEBREW_PREFIX" ] && [ -r "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ] \
       && . "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
+    # Homebrew Ruby, if installed (system Ruby 2.6 is too old for Jekyll)
+    [ -d /opt/homebrew/opt/ruby/bin ] \
+      && export PATH="/opt/homebrew/opt/ruby/bin:/opt/homebrew/lib/ruby/gems/4.0.0/bin:$PATH"
     ;;
   linux*)
     alias ml='module list'
@@ -26,6 +29,10 @@ case "$OSTYPE" in
 esac
 
 export PATH="$HOME/.local/bin:$PATH"
+
+# Miniconda, if installed (activates the "base" env)
+[ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ] \
+  && . "$HOME/miniconda3/etc/profile.d/conda.sh" && conda activate base
 
 ## History
 HISTSIZE=10000
@@ -130,5 +137,5 @@ alias du='du -kh'
 alias h='history'
 alias j='jobs -l'
 
-## Machine-local overrides (not in git)
+## Machine-local overrides (not in git) -- keep this last
 [ -r ~/.bashrc.local ] && . ~/.bashrc.local
