@@ -2,62 +2,72 @@
 
 ## My customizations 
 
-## My Mac Setup
-if [[ $(hostname) =~ .*nanuk.* ]]; then
-  export CLICOLOR=1
-  export LSCOLORS=GxFxCxDxBxegedabagaced
-fi
+## Colors
+export CLICOLOR=1
+export LSCOLORS=GxFxCxDxBxegedabagaced
 
+## Devserver connect helpers
+#
+# Attach to (or create) a tmux session on a devserver.
+#
+# Two problems with the old `mosh -6 HOST -- tmux a` form:
+#   1. `tmux a` fails outright when no session exists yet.
+#   2. A tmux package upgrade (3.5a -> 3.7b) deletes the binary out from
+#      under a long-lived tmux server. The new on-disk client cannot attach
+#      to the still-running old server and reports the misleading
+#      "open terminal failed: not a terminal".
+#
+# Recover the old binary on an affected host with:
+#   P=<pid of "tmux: server">   # from: ps -u $USER -o pid,comm,args | grep tmux
+#   mkdir -p ~/bin && cp /proc/$P/exe ~/bin/tmux-old && chmod +x ~/bin/tmux-old
+#
+# These helpers prefer ~/bin/tmux-old, but only when it can actually reach a
+# server holding the session -- so they keep working on healthy hosts, and
+# after the old server is finally retired.
+#
+# Usage: devmosh HOST [SESSION]   (SESSION defaults to "main")
 
-## Ronaldo Setup
-if [[ $(hostname) =~ .*ronaldo.* ]]; then
-  #echo $(hostname)
-  module load intel
-  module load mkl
-  module load openmpi
-  module load matlab
-  module list
+# Remote script, run as: sh -lc "$_DEV_TMUX_SCRIPT" <name> [SESSION]
+#   $1 = session name; empty means "most recently used", i.e. old `tmux a`.
+# Passing the session as a positional arg (rather than interpolating it)
+# keeps this a plain single-quoted string with no escaping.
+#
+# Picks the tmux binary that can actually reach the running server, and
+# self-heals: if a package upgrade deleted the binary out from under a
+# long-lived server, recover it from /proc and use that.
+_DEV_TMUX_SCRIPT='
+  T=$HOME/bin/tmux-old
+  works() { [ -x "$1" ] && "$1" list-sessions >/dev/null 2>&1; }
 
-  alias knn='cd /h1/jianyu/Projects/knn/src'
-fi
+  if ! works "$T"; then
+    for p in $(ps -u "$(id -un)" -o pid=,comm= | awk "/tmux: server/ {print \$1}"); do
+      case $(readlink /proc/$p/exe 2>/dev/null) in
+        *"(deleted)")
+          mkdir -p "$HOME/bin" && cp /proc/$p/exe "$T" && chmod +x "$T"
+          echo "devmosh: recovered $("$T" -V) to $T" >&2
+          break ;;
+      esac
+    done
+    works "$T" || T=tmux
+  fi
 
+  if [ -n "$1" ]; then
+    exec "$T" new-session -A -s "$1"
+  elif "$T" list-sessions >/dev/null 2>&1; then
+    exec "$T" attach -d
+  else
+    exec "$T" new-session -s main
+  fi
+'
 
-## Stampede Setup
-if [[ $(hostname) =~ .*stampede.* ]]; then
-  #echo $(hostname)
-  module load fftw3
-  module load cuda
+devmosh() { mosh -6 "$1" -- sh -lc "$_DEV_TMUX_SCRIPT" devmosh "$2"; }
+devssh()  { ssh  -t "$1" -- sh -lc "$_DEV_TMUX_SCRIPT" devssh  "$2"; }
 
-  alias knn='cd /work/03223/jianyu/Project/knn/src'
-  alias gpu='srun -A PADAS -p gpu -t 1:00:00 -n 32 --pty /bin/bash -l'
-fi
+# Example host alias:
+#   alias dev='devmosh <your-devserver-hostname>'
 
-
-## Maverick Setup
-if [[ $(hostname) =~ .*maverick.* ]]; then
-  #echo $(hostname)
-  module load cuda
-
-  alias strassen='cd /home/03223/jianyu/Work/Github/blis-strassen'
-  alias knn='cd /work/03223/jianyu/Project/knn/src'
-  alias gpu='srun -A PADAS -p gpu -t 1:00:00 -n 40 --pty /bin/bash -l'
-fi
-
-## Wrangler Setup
-if [[ $(hostname) =~ .*wrangler.* ]]; then
-  #echo $(hostname)
-
-  alias knn='cd /home/03223/jianyu/Project/knn/src'
-  alias gpu='srun -A PADAS -p gpu -t 1:00:00 -n 40 --pty /bin/bash -l'
-fi
-
-## LoneStar 5 Setup
-if [[ $(hostname) =~ .*ls5.* ]]; then
-  #echo $(hostname)
-
-  #alias gpu='srun -A PADAS -p gpu -t 1:00:00 -n 40 --pty /bin/bash -l'
-fi
-
+export HGEDITOR=vim
+export EDITOR=vim
 
 ## Git command line display
 function git_branch {
